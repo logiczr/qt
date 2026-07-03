@@ -17,7 +17,30 @@ def step(msg):
     print(f"{'='*60}")
 
 
+def is_initialized():
+    """检测是否已完成首次初始化 — 检查 Silver stock_map 是否有数据。"""
+    try:
+        from db import configure, get_db
+        db_path = os.environ.get("QT_DB_PATH", "Data.duckdb")
+        configure(db_path)
+        db = get_db()
+        tables = db.list_tables()
+        silver_tables = tables[tables["schema"] == "silver"]
+        if silver_tables.empty:
+            return False
+        # stock_map 是 Silver 第一张表，有数据就算初始化过
+        count = db.execute("SELECT count(*) AS c FROM silver.stock_map", mode="read").iloc[0, 0]
+        return count > 0
+    except Exception:
+        return False
+
+
 def main():
+    # ---- 0. 检测 ----
+    if is_initialized():
+        print("已检测到初始化数据，跳过 setup")
+        return
+
     # ---- 1. 目录 ----
     step("1. 创建目录")
     for d in ["data/bronze/f10", "data/silver/f10", "data/industry"]:

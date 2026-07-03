@@ -24,5 +24,5 @@ VOLUME /app/logs
 # 端口：serve 8000, realtime 8888
 EXPOSE 8000 8888
 
-# 默认启动全部服务
-CMD ["python", "main.py"]
+# 首次部署自动初始化（setup检测已有数据则跳过），然后启动服务
+CMD ["sh", "-c", "python setup.py && python main.py"]
