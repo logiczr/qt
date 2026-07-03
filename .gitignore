@@ -1,0 +1,32 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# DuckDB
+Data.duckdb
+Data.duckdb.wal
+
+# 数据和日志（运行时生成）
+data/
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 探索/测试/杂项（非正式代码）
+a.py
+explore_output/
+oth/
+test/

@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.git/
+.vscode/
+.idea/
+
+# 大文件，运行时挂载
+Data.duckdb
+Data.duckdb.wal
+data/
+logs/
