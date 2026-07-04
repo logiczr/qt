@@ -98,7 +98,7 @@ class DuckDBManager:
 
     def run_sql_file(self, filepath: str) -> None:
         """执行单个 .sql 文件。"""
-        with open(filepath) as f:
+        with open(filepath, encoding="utf-8") as f:
             sql = f.read()
         self._execute_ddl(sql)
 
