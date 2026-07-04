@@ -2,7 +2,7 @@
 
 Bronze 来源：
   - 主源：bronze.raw_tdx_kline_daily_bfq（不复权）
-  - 备源：bronze.raw_tencent_kline_day_bfq（不复权）
+  - 备源：bronze.raw_tencent_kline_daily_bfq（不复权）
 
 清洗逻辑：
   P0 直接映射：stock_code, trade_date, open, high, low, close, volume, amount
@@ -115,11 +115,18 @@ class DailyKlineBuilder(BaseBuilder):
 
         注意：腾讯 volume 单位为手，需 ×100 转股；
         amount 列全为空，不读取。
+        表不存在时返回空 DataFrame，不影响 TDX 主源构建。
 
         Args:
             date_filter: 非空时只读该日期，格式 'YYYY-MM-DD'
             codes: 非空时只读这些股票代码（不带 sh/sz 前缀）
         """
+        # 腾讯表可能不存在（未拉取），跳过
+        try:
+            db.execute("SELECT 1 FROM bronze.raw_tencent_kline_daily_bfq LIMIT 1", mode="read")
+        except Exception:
+            _log.warning("bronze.raw_tencent_kline_daily_bfq 不存在，跳过腾讯源")
+            return pd.DataFrame()
         conds = []
         if date_filter:
             conds.append(f"date = '{date_filter}'")
@@ -136,7 +143,7 @@ class DailyKlineBuilder(BaseBuilder):
         where = f" WHERE {' AND '.join(conds)}" if conds else ""
         df = db.execute(
             f"SELECT stock_code, date, open, close, high, low, volume "
-            f"FROM bronze.raw_tencent_kline_day_bfq{where}",
+            f"FROM bronze.raw_tencent_kline_daily_bfq{where}",
             mode="read",
         )
         df["source"] = "tencent"
@@ -215,10 +222,15 @@ class DailyKlineBuilder(BaseBuilder):
             "SELECT DISTINCT stock_code FROM bronze.raw_tdx_kline_daily_bfq",
             mode="read",
         )["stock_code"].astype(str).tolist()
-        tc_codes = db.execute(
-            "SELECT DISTINCT stock_code FROM bronze.raw_tencent_kline_day_bfq",
-            mode="read",
-        )["stock_code"].astype(str).tolist()
+        # 腾讯表可能不存在
+        try:
+            tc_codes = db.execute(
+                "SELECT DISTINCT stock_code FROM bronze.raw_tencent_kline_daily_bfq",
+                mode="read",
+            )["stock_code"].astype(str).tolist()
+        except Exception:
+            _log.warning("bronze.raw_tencent_kline_daily_bfq 不存在，仅使用 TDX 源")
+            tc_codes = []
         # 腾讯 code 去 sh/sz 前缀后合并
         tc_clean = [c.replace("sh", "").replace("sz", "") for c in tc_codes]
         all_codes = sorted(set(tdx_codes + tc_clean))
